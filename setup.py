@@ -34,6 +34,5 @@ setup(
     ],
     packages=find_packages("src"),
     package_dir={"": "src"},
-    data_files=[("", ["LICENSE.txt", "README.rst"])],
     install_requires=["future~=0.15.2"],
 )
