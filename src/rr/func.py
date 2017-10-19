@@ -2,40 +2,34 @@
 
 This module defines a set of higher-order functions to create new useful functions.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
+import builtins
 import functools
 import operator
 
-from future.moves import builtins
-
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __author__ = "Rui Rei"
 __copyright__ = "Copyright 2016-2017 {author}".format(author=__author__)
 __license__ = "MIT"
 
-# We rebind 'map', 'reduce', 'filter' and 'partial' here just so that these functions can be used
-# in the same manner as the functions actually defined in this module e.g. func.map(f, [2, 3])
-# instead of having to import functools and using functional operators from different modules.
-# The idea here is to make all functional operators accessible from this module.
+# We rebind 'reduce' and 'partial' here just so that these functions can be used in the same
+# manner as the functions actually defined in this module e.g. func.reduce(f, [2, 3]) instead of
+# having to import functools and using functional operators from different modules. The idea here
+# is to make all functional operators accessible from this module.
 map = builtins.map
 filter = builtins.filter
 reduce = functools.reduce
 partial = functools.partial
 
 
-def pipe(funcs, name=None, doc=None):
+def pipe(*funcs, name=None, doc=None):
     """Create a pipeline of functions. The first function is passed the original arguments, and
     the remaining functions take as single argument the return value of the previous function.
 
-        P = func.pipe([f, g, h])
+        P = func.pipe(f, g, h)
         P(x)  # equivalent to... h(g(f(x)))
 
     The name and docstring of the newly created function can be given through the 'name' and
-    'doc' arguments.
+    'doc' keyword-only arguments.
     """
     def pipe_func(*args, **kwargs):
         ifuncs = iter(funcs)
@@ -49,16 +43,16 @@ def pipe(funcs, name=None, doc=None):
     return pipe_func
 
 
-def tee(funcs, name=None, doc=None):
+def tee(*funcs, name=None, doc=None):
     """Create a function which broadcasts all arguments it receives to a list of "sub-functions".
     The return value of the tee function is a generator expression containing the return values
     of the individual sub-functions.
 
-        T = func.tee([f, g, h])
+        T = func.tee(f, g, h)
         T(x)  # equivalent to...  [f(x), g(x), h(x)] (as a generator expression, not a list!)
 
     The name and docstring of the newly created function can be given through the 'name' and
-    'doc' arguments.
+    'doc' keyword-only arguments.
     """
     def tee_func(*args, **kwargs):
         return (func(*args, **kwargs) for func in funcs)
@@ -110,8 +104,8 @@ def binop(op, left, right, name=None, doc=None):
     """Define a function which applies a binary operator to the results of the two operand
     functions `left` and `right`.
 
-    The name and docstring of the newly created function can be given through the 'name' and
-    'doc' arguments.
+    The name and docstring of the newly created function can be given through the `name` and
+    `doc` arguments.
     """
     def binop_func(*args, **kwargs):
         return op(left(*args, **kwargs), right(*args, **kwargs))
@@ -123,20 +117,20 @@ def binop(op, left, right, name=None, doc=None):
     return binop_func
 
 
-def aggregate(agg, funcs, name=None, doc=None):
+def aggregate(agg, *funcs, name=None, doc=None):
     """Apply an aggregate function on the results of an arbitrary number of operand functions.
 
-        A = func.aggregate(sum, [f, g, h])
-        A(x)  # equivalent to... sum([f(x), g(x), h(x)])
+        A = func.aggregate(sum, f, g, h)
+        A(x)  # equivalent to... sum(f(x), g(x), h(x))
         # this example is actually also equivalent to func.sum()
 
     This is very similar to reduce(), but operates on (and returns) functions instead.
     The name and docstring of the newly created function can be given through the 'name' and
-    'doc' arguments.
+    'doc' keyword-only arguments.
     """
     if not name:
-        name = "aggregate({}, {})".format(agg.__name__, [f.__name__ for f in funcs])
-    return pipe([tee(funcs), agg], name=name, doc=doc)
+        name = "aggregate({}, {})".format(agg.__name__, ", ".join(f.__name__ for f in funcs))
+    return pipe(tee(*funcs), agg, name=name, doc=doc)
 
 
 # Below we define a set of binop()- and aggregate()-based arithmetic operators and common
@@ -173,25 +167,25 @@ def pow(f, g):
     return binop(operator.pow, f, g)
 
 
-def sum(funcs):
-    return aggregate(builtins.sum, funcs)
+def sum(*funcs):
+    return aggregate(builtins.sum, *funcs)
 
 
-def prod(funcs):
-    return aggregate(partial(reduce, operator.mul), funcs)
+def prod(*funcs):
+    return aggregate(partial(reduce, operator.mul), *funcs)
 
 
-def min(funcs):
-    return aggregate(builtins.min, funcs)
+def min(*funcs):
+    return aggregate(builtins.min, *funcs)
 
 
-def max(funcs):
-    return aggregate(builtins.max, funcs)
+def max(*funcs):
+    return aggregate(builtins.max, *funcs)
 
 
-def any(funcs):
-    return aggregate(builtins.any, funcs)
+def any(*funcs):
+    return aggregate(builtins.any, *funcs)
 
 
-def all(funcs):
-    return aggregate(builtins.all, funcs)
+def all(*funcs):
+    return aggregate(builtins.all, *funcs)
