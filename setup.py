@@ -26,6 +26,6 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Operating System :: OS Independent",
     ],
-    packages=find_packages("src"),
+    packages=["rr"] + ["rr." + p for p in find_packages("src/rr")],
     package_dir={"": "src"},
 )
